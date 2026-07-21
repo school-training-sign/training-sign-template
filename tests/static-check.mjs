@@ -113,6 +113,33 @@ expect(/SpreadsheetApp\.openById\(PropertiesService\.getScriptProperties\(\)\.ge
 expect(/hideDataSheets_/.test(backend) && /사용설명서/.test(backend), '사용설명서 표시·데이터 탭 숨김 처리가 누락되었습니다.');
 expect(/학교 연수 전자서명 시스템 사용설명서/.test(backend) && /training-sign-template/.test(backend), '다른 학교용 배포 사용설명서 또는 템플릿 저장소 안내가 누락되었습니다.');
 expect(/https:\/\/github\.com\/school-training-sign\/training-sign-template/.test(backend), '배포 템플릿 저장소 주소가 새 조직명과 일치하지 않습니다.');
+const guideSetupStart = backend.indexOf("title: '1. 학교용 사본과 웹앱 만들기'");
+const guidePagesStart = backend.indexOf("title: '2. 학교별 전자서명 화면 연결하기'");
+const guideAdminStart = backend.indexOf("title: '3. 관리자 첫 설정'");
+const guideSetupSection = guideSetupStart >= 0 && guidePagesStart > guideSetupStart
+  ? backend.slice(guideSetupStart, guidePagesStart)
+  : '';
+const guidePagesSection = guidePagesStart >= 0 && guideAdminStart > guidePagesStart
+  ? backend.slice(guidePagesStart, guideAdminStart)
+  : '';
+expect((guideSetupSection.match(/\['[1-9]'/g) || []).length === 3, '학교용 사본·웹앱 안내가 3단계로 간소화되지 않았습니다.');
+expect((guidePagesSection.match(/\['[1-9]'/g) || []).length === 3, '학교별 전자서명 화면 연결 안내가 3단계로 간소화되지 않았습니다.');
+expect(/Google에서 확인하지 않은 앱/.test(guideSetupSection)
+  && /개발자 이메일이 본인 계정/.test(guideSetupSection)
+  && /고급 → 학교 연수 전자서명 시스템으로 이동 → 허용/.test(guideSetupSection)
+  && /모르는 이메일/.test(guideSetupSection)
+  && /Google Workspace 정책/.test(guideSetupSection)
+  && /소유자만 처음 한 번 승인/.test(guideSetupSection)
+  && /서명 참여자에게는 이 화면이 나타나지 않습니다/.test(guideSetupSection), '미검증 앱 권한 승인 안내가 불완전합니다.');
+expect(/실행 계정은 나/.test(guideSetupSection) && /액세스 권한은 모든 사용자/.test(guideSetupSection) && /\/exec/.test(guideSetupSection), '웹앱 배포 설정 또는 주소 복사 안내가 누락되었습니다.');
+expect(/assets\/config\.js/.test(guidePagesSection) && /초기 설정 코드·비밀번호·공유 키·명단은 GitHub 저장소에 넣지 않습니다/.test(guidePagesSection), '웹앱 주소 연결 또는 GitHub 비밀정보 금지 안내가 누락되었습니다.');
+expect(!/사본 이름은|자동으로 만들어집니다|연결된 스크립트가|이 URL은 공개 화면/.test(guideSetupSection + guidePagesSection), '간소화하기로 한 배포 안내가 남아 있습니다.');
+expect(/\['2', '미서명 현황 확인'/.test(backend)
+  && /\['3', '서명 기록 확인'/.test(backend)
+  && /\['4', '출력 미리보기'/.test(backend)
+  && /\['5', '파일 보관'/.test(backend)
+  && /\['6', '원본 삭제'/.test(backend), '연수 운영 안내의 미서명 현황 또는 후속 단계 번호가 올바르지 않습니다.');
+expect(/setRowHeight\(guideRow, step\[4\] \|\| 58\)/.test(backend), '긴 안내 행의 개별 높이 설정이 없습니다.');
 expect(!/jyejye-school/.test(backend), 'Apps Script 코드에 이전 GitHub 조직명이 남아 있습니다.');
 expect(/현재 운영 시트에는 학교 데이터가 있으므로 다른 학교에 공유하지 마세요/.test(backend), '운영 시트를 배포용 원본으로 잘못 공유하지 않도록 하는 경고가 없습니다.');
 expect(/getMaxRows\(\)[\s\S]*getMaxColumns\(\)[\s\S]*breakApart/.test(backend), '사용설명서 재생성 시 기존 병합 셀을 안전하게 해제하지 않습니다.');
